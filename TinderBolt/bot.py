@@ -104,7 +104,9 @@ async def profile(update, context):
 
 
 async def profile_dialog(update, context):
-    text = update, message, text
+    text = update.message.text
+    # текст, на который среагировала функция hello и запустила эту функцию находится в update.message.text
+    # видимо, авторы или вы, случайно поставили запятые вместо точек, потому не работало
     dialog.count += 1
 
     if dialog.count == 1:
@@ -124,10 +126,12 @@ async def profile_dialog(update, context):
         prompt = load_prompt("profile")
         user_info = dialog_user_info_to_str(dialog.user)
 
-    my_message = await send_text(update, context,
-                                 "ChatGPT 🧠 занимается генерацией вашего профиля. Подождите пару секунд...")
-    answer = await chatgpt.send_question(prompt, user_info)
-    await my_message.edit_text(answer)
+        # чтобы chatgpt не вызывался на ответ каждого вопроса,
+        # надо поместить его вызов внуть последнего шага этой функции
+        my_message = await send_text(update, context,
+                                     "ChatGPT 🧠 занимается генерацией вашего профиля. Подождите пару секунд...")
+        answer = await chatgpt.send_question(prompt, user_info)
+        await my_message.edit_text(answer)
 
 
 async def opener(update, context):
@@ -141,9 +145,7 @@ async def opener(update, context):
     await send_text(update, context, "Имя девушки?")
 
 async def opener_dialog(update, context):
-    print(message)
-    print(context)
-    text = update, message, text
+    text = update.message.text
     dialog.count += 1
 
     if dialog.count == 1:
@@ -170,14 +172,17 @@ async def opener_dialog(update, context):
 async def hello(update, context):
     if dialog.mod == "gpt":
         await gpt_dialog(update, context)
-    if dialog.mod == "date":
+    elif dialog.mod == "date":
         await date_dialog(update, context)
-    if dialog.mod == "message":
+    elif dialog.mod == "message":
         await message_dialog(update, context)
-    if dialog.mod == "profile":
+    elif dialog.mod == "profile":
         await profile_dialog(update, context)
-    if dialog.mod == "opener":
+    elif dialog.mod == "opener":
         await opener_dialog(update, context)
+    # везде выше надо поставить elif, а не if, ведь раньше на каждый текст проверялся каждый if,
+    # и потому при if dialog.mod == "opener" gpt не вызывался на каждое сообщение
+    # а всегда когда dialog.mod не был равен "opener", то срабатывал else ниже, и вызывался chat gpt
     else:
         await send_text(update, context, "*Привет*")
         await send_text(update, context, "_Как дела_?")
